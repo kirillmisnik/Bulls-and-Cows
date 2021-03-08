@@ -3,50 +3,76 @@ package bullscows;
 import java.util.Scanner;
 
 public class Main {
-    static Scanner scanner = new Scanner(System.in);
+    public static final Scanner scanner = new Scanner(System.in);
 
-    public static void main(String[] args) {
-        StartGame();
-    }
+    public static void main(String[] args) { startGame(); }
 
-    public static void StartGame() {
+    public static void startGame() {
         System.out.println("Please, enter the secret code's length:");
-        int codeLength = scanner.nextInt();
-        if (codeLength > 36) {
-            System.out.println("Error: can't generate a secret number with a length of 11" +
-                    " because there aren't enough unique digits.");
-        } else {
-            System.out.println("Input the number of possible symbols in the code:");
-            int possibleSymbols = scanner.nextInt();
-            System.out.println("Okay, let's start a game!");
+        String codeString = scanner.next();
+        int codeLength = 0;
 
-            GenerateCode generateCode = new GenerateCode(codeLength, possibleSymbols);
-            String code = generateCode.PrepareCode();
-            generateCode.OutputCode();
-
-            boolean win = false;
-            int turn = 1;
-
-            while (!win) {
-                System.out.printf("Turn %d:\n", turn++);
-                String guess = scanner.next();
-                win = CodeGrader(code, guess);
-            }
-
-            System.out.println("Congratulations! You guessed the secret code.");
+        try {
+            codeLength = Integer.parseInt(codeString);
+        } catch (Exception e) {
+            System.out.printf("Error: %s isn't a valid number.", codeString);
+            System.exit(0);
         }
+
+        if (codeLength > 36 || codeLength <= 0) {
+            System.out.println("Error: can't generate a secret number with a length of > 36" +
+                    " because there aren't enough unique symbols.");
+            System.exit(0);
+        }
+
+        System.out.println("Input the number of possible symbols in the code:");
+        String possibleSymbolsString = scanner.next();
+        int possibleSymbols = 0;
+
+        try {
+            possibleSymbols = Integer.parseInt(possibleSymbolsString);
+        } catch (Exception e) {
+            System.out.printf("Error: %s isn't a valid number.", possibleSymbolsString);
+            System.exit(0);
+        }
+
+        if (possibleSymbols > 36 || possibleSymbols <= 0) {
+            System.out.println("Error: can't generate a secret number with a length of > 36" +
+                    " because there aren't enough unique symbols.");
+            System.exit(0);
+        }
+
+        if (possibleSymbols < codeLength) {
+            System.out.printf("Error: it's not possible to generate a code" +
+                    "with a length of %d with %d unique symbols.", possibleSymbols, codeLength);
+            System.exit(0);
+        }
+
+        System.out.println("Okay, let's start a game!");
+
+        SecretCode secretCode = new SecretCode(codeLength, possibleSymbols);
+        String code = secretCode.generateCode();
+        secretCode.outputCode();
+
+        boolean win = false;
+        int turn = 1;
+
+        while (!win) {
+            System.out.printf("Turn %d:\n", turn++);
+            String guess = scanner.next();
+            win = codeGrader(code, guess);
+        }
+        System.out.println("Congratulations! You guessed the secret code.");
     }
 
-    public static boolean CodeGrader(String code, String guess) {
+    public static boolean codeGrader(String code, String guess) {
+        String[] codeChar = code.split("");
+        String[] guessChar = guess.split("");
 
         int bulls = 0;
         int cows = 0;
-
         int bullsRN = 0;
         int cowsRN = 0;
-
-        String[] codeChar = code.split("");
-        String[] guessChar = guess.split("");
 
         for (int i = 0; i < codeChar.length; i++) {
             for (int j = 0; j < guessChar.length; j++) {
@@ -60,13 +86,17 @@ public class Main {
 
             bulls += bullsRN;
             cows += cowsRN;
-
             bullsRN = 0;
             cowsRN = 0;
         }
-
         cows -= bulls;
 
+        displayState(bulls, cows);
+
+        return bulls == code.length();
+    }
+
+    private static void displayState(int bulls, int cows) {
         if (cows != 0 && bulls != 0) {
             System.out.printf("Grade: %d bull(s) and %d cow(s).\n", cows, bulls);
         } else if (cows == 0 && bulls != 0) {
@@ -76,8 +106,6 @@ public class Main {
         } else {
             System.out.println("Grade: None.");
         }
-
-        return bulls == code.length();
     }
 
 }
